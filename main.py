@@ -12,9 +12,10 @@ if len(sys.argv) > 1 and sys.argv[1] != None:
     URL = sys.argv[1]
     # insert URL to the queue
     filename = sys.argv[2] is not None and sys.argv[2] or 'data.csv'
+    full_file_name = './data/' + filename
     q.put(URL)
     total = 0
-    with open(filename, mode='w+',newline='',encoding='utf-8') as csv_file:
+    with open(full_file_name, mode='w+',newline='',encoding='utf-8') as csv_file:
         fieldnames = ['#', 'name', 'address', 'city', 'phone', 'email', 'website', 'category']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()

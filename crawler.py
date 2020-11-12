@@ -15,7 +15,12 @@ def crawl(URL, q, completed):
             if results != None:
                 listing = results.find_all('div', class_='listing_box')
                 for company in listing:
-                    name = company.find('h2', class_ = 'company_name').find('a').string
+                    name = company.find('p', class_ = 'company_name').string
+                    name_el = company.find_all('p', class_ = 'company_name')
+                    for el in name_el:
+                        if el.string != None:
+                            name = el.string
+
                     add = company.find('p', class_='listing_diachi')
                     ct = add.em.extract()
                     address = add.string
@@ -25,14 +30,22 @@ def crawl(URL, q, completed):
                     email_el = company.find('p', class_='listing_email')
                     email = email_el is not None and email_el.string or ''
 
-                    cat = company.find('div', class_ = 'listing_nganhnghe').find('strong').string
+                    cat_el1 = company.find('div', class_ = 'company_name_section')
+                    cat = cat_el1.h2.a.span.string
+                    if cat.startswith(" | "):
+                        cat = cat[3:]
+
+                    # cat = company.find('div', class_ = 'listing_nganhnghe').find('strong').string
 
                     web = ''
-                    web1 = company.find('div', class_='listing_website')
-                    if web1 != None:
-                        web2 = web1.find('a', rel = 'nofollow')
-                        if web2 != None:
-                            web = web2.get('href')
+                    web1 = company.find_all('div', class_='listing_email')
+                    if web1 != None and len(web1) > 1:
+                        web = web1[1].a.get('href')
+
+                    #if web1 != None:
+                    #    web2 = web1.find('a', rel = 'nofollow')
+                    #    if web2 != None:
+                    #        web = web2.get('href')
                     data.append({
                         "name": name,
                         "address": address,
