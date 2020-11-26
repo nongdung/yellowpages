@@ -16,7 +16,7 @@ if len(sys.argv) > 1 and sys.argv[1] != None:
     q.put(URL)
     total = 0
     with open(full_file_name, mode='w+',newline='',encoding='utf-8') as csv_file:
-        fieldnames = ['#', 'name', 'address', 'city', 'phone', 'email', 'website', 'category']
+        fieldnames = ['#', 'name', 'address', 'city', 'phone', 'email', 'website', 'main_services', 'main_routes', 'contact_person', 'contact_position']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -32,7 +32,7 @@ if len(sys.argv) > 1 and sys.argv[1] != None:
 
                 print('...harvested %s item(s)' % len(data))
                 if not q.empty():
-                    t = random.randint(10, 15)
+                    t = random.randint(30, 65)
                     print('...delay for %s seconds...' % t)
                     time.sleep(t)
 
