@@ -18,11 +18,13 @@ def crawl(URL, q, completed):
             if page.status_code == 200:
                 # data processcing
                 soup = BeautifulSoup(page.content, 'lxml')
-                results = soup.find('div', class_ = 'product-list')
+                container = soup.find('div', class_ = 'search-container-center')
 
-                if results != None:
-                    listing = results.find_all('div', class_='product-item')
+                if container != None:
+                    listing = container.find_all('div', class_='search-listing')
                     for company in listing:
+                        img_link = company.find('a', class_ = 'search-business-img yp-click')
+                        detail_link = img_link.get('href')
                         product_head = company.find('div', class_ = 'product-head')
                         product_detail = company.find('dl', class_ = 'product-detail')
 
