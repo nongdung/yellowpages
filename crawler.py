@@ -11,6 +11,8 @@ def crawl(URL, q, completed):
         conn_timeout = 10
         read_timeout = 60
         timeouts = (conn_timeout, read_timeout)
+        u = urlparse(URL)
+        root_url = u.scheme + '://' + u.netloc
 
         try:
             page = requests.get(URL, timeout=timeouts)
@@ -22,37 +24,15 @@ def crawl(URL, q, completed):
 
                 if container != None:
                     listing = container.find_all('div', class_='search-listing')
+                    i = 0
                     for company in listing:
                         img_link = company.find('a', class_ = 'search-business-img yp-click')
-                        detail_link = img_link.get('href')
-                        product_head = company.find('div', class_ = 'product-head')
-                        product_detail = company.find('dl', class_ = 'product-detail')
-
-                        # company name
-                        ul = product_head.find('ul')
-                        #print(ul)
-                        lis = ul.find_all('li')
-                        name = lis[1].a.text
-                        detail_link = lis[1].a.get('href')
-
-                        # address
-                        dds = product_detail.find_all('dd')
-                        address = dds[0].text
-                        phone = dds[1].text
-                        main_services = dds[2].text
-                        main_routes = dds[3].text
-                        city = ''
-                        contact_person = ''
-                        contact_position = ''
-                        website = ''
-                        email = ''
-                        print(name)
-
+                        detail_link = root_url + img_link.get('href')
+                        # print(detail_link)
                         #crawl company detail
-
                         # delay random seconds
-                        t = random.randint(60, 90)
-                        # print('page detail...delay for %s seconds...' % t)
+                        t = random.randint(15, 30)
+                        print('     page detail...delay for %s seconds...' % t)
                         time.sleep(t)
 
                         try:
@@ -60,23 +40,63 @@ def crawl(URL, q, completed):
                             company_detail.raise_for_status()
                             if company_detail.status_code == 200:
                                 # data processcing
+                                name = ''
+                                address = ''
+                                mobile = ''
+                                email = ''
+                                website = ''
+                                social = ''
+                                landlines = []
+
                                 company_detail_soup = BeautifulSoup(company_detail.content, 'lxml')
-                                block_top_info = company_detail_soup.find('div', class_ = 'block-top-information')
-                                block_introduce = company_detail_soup.find('div', class_ = 'block-introduce')
-                                #city
-                                #print(detail_link)
                                 #print(company_detail_soup)
-                                if block_top_info is not None:
-                                    city = block_top_info.find('p', class_ = 'content-1-line').span.text
-                                    contact_person = block_top_info.find_all('p')[0].text.split(':')[1]
-                                    contact_position = block_top_info.find_all('p')[1].text.split(':')[1]
-                                else:
-                                    print('Error: block_top_info empty!')
-                                # website
-                                if block_introduce is not None:
-                                    website = block_introduce.find_all('li')[2].span.text
-                                else:
-                                    print('Error: block_introduce empty!')
+                                container = company_detail_soup.find('div', class_ = 'container')
+                                main_content = company_detail_soup.find('div', class_='main-content')
+                                biz_items = company_detail_soup.find('div', class_='border-top').find_all('div', class_='biz-item')
+                                # name
+                                name = main_content.find('h1').text
+                                print("     ",name)
+
+                                #address
+                                for item in biz_items:
+                                    #print('##############')
+                                    #print(item)
+                                    label = item.find('div', class_='icon-la b')
+                                    if label is not None:
+                                        #address
+                                        if label.text == 'Address':
+                                            address = item.a.text
+                                        #mobile
+                                        if label.text == 'Mobile':
+                                            mobile = item.a.get('href').split(':')[1]
+                                        #email
+                                        if label.text == 'Email':
+                                            email = item.a.text
+                                        #website
+                                        if label.text == 'Website':
+                                            website = item.a.get('href')
+                                        #social
+                                        if label.text == 'Social':
+                                            social = item.a.get('href')
+                                        #landlines
+                                        if label.text == 'Landline':
+                                            tel_links = item.find_all('a', class_='biz-link')
+                                            for link in tel_links:
+                                                # print(link.get('href'))
+                                                href = link.get('href')
+                                                if ":" in href:
+                                                    landlines.append(href.split(':')[1])
+
+                                data.append({
+                                    "name": name,
+                                    "address": address,
+                                    "mobile": mobile,
+                                    "landlines": " ".join(landlines),
+                                    "email": email,
+                                    "website": website,
+                                    "social": social,
+                                })
+
                         except requests.exceptions.RequestException as err:
                             print ("OOps: Something Else",err)
                             t = random.randint(60, 150)
@@ -94,27 +114,16 @@ def crawl(URL, q, completed):
                             t = random.randint(60, 150)
                             time.sleep(t)
 
-
-                        data.append({
-                            "name": name,
-                            "address": address,
-                            "city": city,
-                            "phone": phone,
-                            "email": email,
-                            "website": website,
-                            "main_services": main_services,
-                            "main_routes": main_routes,
-                            "contact_person": contact_person,
-                            "contact_position": contact_position
-                        })
-
                 # links processcing
                 pagination = soup.find('ul', class_ = 'pagination')
-                pagination_links = pagination.find_all('a')
-                for link in pagination_links:
-                    href = link.get('href')
-                    if href != '#' and href not in completed and href != URL:
-                        q.put(href)
+                if pagination is not None:
+                    pagination_links = pagination.find_all('a')
+                    for link in pagination_links:
+                        href = link.get('href')
+                        if '/category/' in href:
+                            next_link = root_url + href
+                            if 'javascript' not in href and next_link not in completed and next_link != URL:
+                                q.put(next_link)
             else:
                 print("Error occur with code: %s" % soup.status_code, URL)
 
