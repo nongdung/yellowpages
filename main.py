@@ -4,16 +4,13 @@ import time
 import crawler
 import random
 import csv
-from itertools import islice
-import concurrent.futures
-import requests
 
 q = queue.Queue()
 completed = []
 
 if len(sys.argv) > 3 and sys.argv[1] != None:
     uid_file = './raw_uid/' + sys.argv[1]
-    PHPSESSID = sys.argv[3]
+    PHPSESSION = sys.argv[3]
     result_filename = sys.argv[2] is not None and sys.argv[2] or 'data.csv'
     full_result_file_name = './data/' + result_filename
 
@@ -23,26 +20,30 @@ if len(sys.argv) > 3 and sys.argv[1] != None:
         writer.writeheader()
 
         # read uid file
-        with open(uid_file, 'r') as f:
-            while True:
-                next_5_lines = list(islice(f, 5))
-                #process 5 lines
-                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                    futures = []
-                    for uid in next_5_lines:
-                        futures.append(
-                            executor.submit(
-                                crawler.get_phone_by_uid, uid=uid, PHPSESSID=PHPSESSID, writer=writer
-                            )
-                        )
-                    for future in concurrent.futures.as_completed(futures):
-                        try:
-                            print(future.result())
-                        except requests.ConnectTimeout:
-                            print("ConnectTimeout.")
-                if not next_5_lines:
-                    break
+        read_uid_file = open(uid_file, 'r')
+        count = 0
+        while True:
+            count += 1
+            # Get next line from file
+            uid = read_uid_file.readline()
+            if uid != '':
+                result = crawler.get_phone_by_uid(uid, PHPSESSION)
+                phone = ''
+                if result['code'] == 200:
+                    phone = result['phone']
+                    #print(result['phone'])
+                data = {'uid': uid.strip(), 'phone': phone}
+                print(data)
+                writer.writerow(data)
+                #print(result)
 
+            # if line is empty
+            # end of file is reached
+            if not uid:
+                break
+            #print("Line{}: {}".format(count, uid.strip()))
+
+        read_uid_file.close()
 
     # insert URL to the queue
     '''
