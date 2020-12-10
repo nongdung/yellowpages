@@ -1,3 +1,4 @@
 *.csv
 *.zip
-**/data
+**/data/
+**/raw_uid/

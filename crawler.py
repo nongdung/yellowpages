@@ -4,6 +4,23 @@ import random
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
+def get_phone_by_uid(uid, PHPSESSID, writer):
+    url = 'https://quetsodienthoai.com/lib/scan123a@/api@123/convert6868.php'
+    #url = url_template.format(uid)
+    params = {'uid': uid}
+    #cookies = dict(PHPSESSID=PHPSESSION)
+    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:74.0) Gecko/20100101 Firefox/74.0'}
+    cookies = {'PHPSESSID': PHPSESSID}
+    response = requests.get(url, cookies=cookies, headers=headers, params=params)
+    result = response.json()
+    phone = ''
+    if result['code'] == 200:
+        phone = result['phone']
+        #print(result['phone'])
+    data = {'uid': uid.strip(), 'phone': phone}
+    writer.writerow(data)
+    return data
+
 def crawl(URL, q, completed):
     data = []
     if URL not in completed:
