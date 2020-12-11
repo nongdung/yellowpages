@@ -14,7 +14,7 @@ N = 10
 count = 0
 
 if len(sys.argv) > 3 and sys.argv[1] != None:
-    uid_file = './raw_uid/' + sys.argv[1]
+    uid_file = sys.argv[1]
     PHPSESSION = sys.argv[3]
     result_filename = sys.argv[2] is not None and sys.argv[2] or 'data.csv'
     full_result_file_name = './data/' + result_filename
