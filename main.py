@@ -4,9 +4,14 @@ import time
 import crawler
 import random
 import csv
+import concurrent.futures
+from itertools import islice
+import requests
 
 q = queue.Queue()
 completed = []
+N = 10
+count = 0
 
 if len(sys.argv) > 3 and sys.argv[1] != None:
     uid_file = './raw_uid/' + sys.argv[1]
@@ -20,6 +25,30 @@ if len(sys.argv) > 3 and sys.argv[1] != None:
         writer.writeheader()
 
         # read uid file
+        with open(uid_file) as f:
+            while True:
+                next_n_lines = list(islice(f, N))
+                if not next_n_lines:
+                    break
+                # process next_n_lines
+                with concurrent.futures.ThreadPoolExecutor(max_workers=N) as executor:
+                    tasks = []
+                    for uid in next_n_lines:
+                        # print(uid)
+                        tasks.append(
+                            executor.submit(
+                                crawler.get_phone_by_uid, uid=uid.strip(), PHPSESSION=PHPSESSION
+                            )
+                        )
+                    for task in concurrent.futures.as_completed(tasks):
+                        try:
+                            data = task.result()
+                            count = count + 1
+                            print(count, data)
+                            writer.writerow(data)
+                        except Exception:
+                            print("Error.")
+        '''
         read_uid_file = open(uid_file, 'r')
         count = 0
         while True:
@@ -44,6 +73,7 @@ if len(sys.argv) > 3 and sys.argv[1] != None:
             #print("Line{}: {}".format(count, uid.strip()))
 
         read_uid_file.close()
+        '''
 
     # insert URL to the queue
     '''

@@ -3,6 +3,7 @@ import time
 import random
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+from utils import convert_mobile_number
 
 def get_phone_by_uid(uid, PHPSESSION):
     url = 'https://quetsodienthoai.com/lib/scan123a@/api@123/convert6868.php'
@@ -11,14 +12,14 @@ def get_phone_by_uid(uid, PHPSESSION):
     #cookies = dict(PHPSESSID=PHPSESSION)
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:74.0) Gecko/20100101 Firefox/74.0'}
     cookies = {'PHPSESSID': PHPSESSION}
-    try:
-        response = requests.get(url, cookies=cookies, headers=headers, params=params)
-        #json_obj = response.json()
-        #print(response.content)
-        return response.json()
-    except requests.exceptions.HTTPError as e:
-        print("Error: " + str(e))
-        return {}
+    response = requests.get(url, cookies=cookies, headers=headers, params=params)
+    result = response.json()
+    phone = ''
+    if result['code'] == 200:
+        phone = convert_mobile_number(str(result['phone']))
+        #print(result['phone'])
+    data = {'uid': uid.strip(), 'phone': phone}
+    return data
 
 def crawl(URL, q, completed):
     data = []
