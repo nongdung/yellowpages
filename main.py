@@ -8,21 +8,24 @@ import csv
 q = queue.Queue()
 completed = []
 
-if len(sys.argv) > 1 and sys.argv[1] != None:
+if len(sys.argv) > 1 and sys.argv[1] is not None:
+    print(sys.argv)
     URL = sys.argv[1]
     # insert URL to the queue
     filename = sys.argv[2] is not None and sys.argv[2] or 'data.csv'
     full_file_name = './data/' + filename
     q.put(URL)
     total = 0
-    with open(full_file_name, mode='w+',newline='',encoding='utf-8') as csv_file:
-        fieldnames = ['#', 'name', 'address', 'landlines', 'mobile', 'email', 'website', 'social']
+    with open(full_file_name, mode='w+', newline='', encoding='utf-8') as csv_file:
+        fieldnames = ['#', 'name', 'address', 'landlines',
+                      'mobile', 'email', 'website', 'social']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
 
         while not q.empty():
             processcing_url = q.get()
             if processcing_url not in completed:
+                print("Processing {}".format(processcing_url))
                 data = crawler.crawl(processcing_url, q, completed)
                 # total = total + len(data)
                 for company in data:

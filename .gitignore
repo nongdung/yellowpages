@@ -3,3 +3,5 @@
 **/data
 raw_uid
 *.txt
+__pycache__
+*.pyc
