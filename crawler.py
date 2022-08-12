@@ -4,6 +4,7 @@ import random
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
+
 def crawl(URL, q, completed):
     data = []
     if URL not in completed:
@@ -20,23 +21,23 @@ def crawl(URL, q, completed):
             if page.status_code == 200:
                 # data processcing
                 soup = BeautifulSoup(page.content, 'lxml')
-                container = soup.find('div', class_ = 'search-container-center')
+                container = soup.find('div', id='main_listing')
 
-                if container != None:
-                    listing = container.find_all('div', class_='search-listing')
-                    i = 0
+                if container is not None:
+                    listing = container.find_all('div', class_='listing_box')
+                    # i = 0
                     for company in listing:
-                        img_link = company.find('a', class_ = 'search-business-img yp-click')
-                        detail_link = root_url + img_link.get('href')
+                        detail_link = company.find('h2').a.get('href')
                         # print(detail_link)
-                        #crawl company detail
+                        # crawl company detail
                         # delay random seconds
-                        t = random.randint(15, 30)
+                        t = random.randint(15, 20)
                         print('     page detail...delay for %s seconds...' % t)
                         time.sleep(t)
 
                         try:
-                            company_detail = requests.get(detail_link, timeout=timeouts)
+                            company_detail = requests.get(
+                                detail_link, timeout=timeouts)
                             company_detail.raise_for_status()
                             if company_detail.status_code == 200:
                                 # data processcing
@@ -45,105 +46,114 @@ def crawl(URL, q, completed):
                                 mobile = ''
                                 email = ''
                                 website = ''
-                                social = ''
-                                landlines = []
 
-                                company_detail_soup = BeautifulSoup(company_detail.content, 'lxml')
-                                #print(company_detail_soup)
-                                container = company_detail_soup.find('div', class_ = 'container')
-                                main_content = company_detail_soup.find('div', class_='main-content')
-                                biz_items = company_detail_soup.find('div', class_='border-top').find_all('div', class_='biz-item')
+                                company_detail_soup = BeautifulSoup(
+                                    company_detail.content, 'lxml')
+                                main_content = company_detail_soup.find(
+                                    'div', id='listings_left')
+                                detail_diachi_box = company_detail_soup.find(
+                                    'div', id='detail_diachi_box'
+                                    )
+
+                                info_p = detail_diachi_box.find_all('p')
                                 # name
                                 name = main_content.find('h1').text
-                                print("     ",name)
+                                print("     - ", name)
 
-                                #address
-                                for item in biz_items:
-                                    #print('##############')
-                                    #print(item)
-                                    label = item.find('div', class_='icon-la b')
-                                    if label is not None:
-                                        #address
-                                        if label.text == 'Address':
-                                            address = item.a.text
-                                        #mobile
-                                        if label.text == 'Mobile':
-                                            mobile = item.a.get('href').split(':')[1]
-                                        #email
-                                        if label.text == 'Email':
-                                            email = item.a.text
-                                        #website
-                                        if label.text == 'Website':
-                                            website = item.a.get('href')
-                                        #social
-                                        if label.text == 'Social':
-                                            social = item.a.get('href')
-                                        #landlines
-                                        if label.text == 'Landline':
-                                            tel_links = item.find_all('a', class_='biz-link')
-                                            for link in tel_links:
-                                                # print(link.get('href'))
-                                                href = link.get('href')
-                                                if ":" in href:
-                                                    landlines.append(href.split(':')[1])
+                                # address
+                                if len(info_p) > 0:
+                                    address = info_p[0].span.text
 
-                                data.append({
+                                # mobile
+                                    mobile_span = detail_diachi_box.find(
+                                        'span',
+                                        class_='span_mathoai')
+                                    if mobile_span is not None:
+                                        mobile = mobile_span.text
+
+                                # email
+                                # website
+                                ilinks = detail_diachi_box.find_all('a')
+                                for anchor in ilinks:
+                                    if 'mailto' in anchor.get('href'):
+                                        if len(email) > 0:
+                                            email += " ,{}".format(anchor.text)
+                                        else:
+                                            email = anchor.text
+                                    if 'http' in anchor.get('href'):
+                                        if len(website) > 0:
+                                            website += " ,{}".format(
+                                                anchor.get('href'))
+                                        else:
+                                            website = anchor.get('href')
+
+                                info = {
                                     "name": name,
                                     "address": address,
                                     "mobile": mobile,
-                                    "landlines": " ".join(landlines),
                                     "email": email,
                                     "website": website,
-                                    "social": social,
-                                })
+                                }
+                                print(info)
+                                data.append(info)
 
                         except requests.exceptions.RequestException as err:
-                            print ("OOps: Something Else",err)
+                            print("OOps: Something Else", err)
                             t = random.randint(60, 150)
                             time.sleep(t)
                         except requests.exceptions.HTTPError as errh:
-                            print ("Http Error:",errh)
+                            print("Http Error:", errh)
                             t = random.randint(60, 150)
                             time.sleep(t)
                         except requests.exceptions.ConnectionError as errc:
-                            print ("Error Connecting:",errc)
+                            print("Error Connecting:", errc)
                             t = random.randint(60, 150)
                             time.sleep(t)
                         except requests.exceptions.Timeout as errt:
-                            print ("Timeout Error:",errt)
+                            print("Timeout Error:", errt)
                             t = random.randint(60, 150)
                             time.sleep(t)
 
                 # links processcing
-                pagination = soup.find('ul', class_ = 'pagination')
+                pagination = soup.find('div', id='paging')
                 if pagination is not None:
                     pagination_links = pagination.find_all('a')
+                    last_page_a = pagination_links[-2]
+                    N = int(last_page_a.text)
+                    print('last_page_a: ', last_page_a)
+                    if N > 1:
+                        for i in range(2, N):
+                            href = root_url + u.path + "?page={}".format(i)
+                            print(href)
+                            if 'javascript' not in href and href not in completed and href != URL:
+                                q.put(href)
+                    """
                     for link in pagination_links:
                         href = link.get('href')
                         if '/category/' in href:
                             next_link = root_url + href
                             if 'javascript' not in href and next_link not in completed and next_link != URL:
                                 q.put(next_link)
+                    """
             else:
                 print("Error occur with code: %s" % soup.status_code, URL)
-
-            completed.append(URL)
         except requests.exceptions.RequestException as err:
-            print ("OOps: Something Else",err)
+            print("OOps: Something Else", err)
             t = random.randint(60, 150)
             time.sleep(t)
         except requests.exceptions.HTTPError as errh:
-            print ("Http Error:",errh)
+            print("Http Error:", errh)
             t = random.randint(60, 150)
             time.sleep(t)
         except requests.exceptions.ConnectionError as errc:
-            print ("Error Connecting:",errc)
+            print("Error Connecting:", errc)
             t = random.randint(60, 150)
             time.sleep(t)
         except requests.exceptions.Timeout as errt:
-            print ("Timeout Error:",errt)
+            print("Timeout Error:", errt)
             t = random.randint(60, 150)
             time.sleep(t)
+        completed.append(URL)
 
     # finally return data
     return data
