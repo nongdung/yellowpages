@@ -15,8 +15,23 @@ if len(sys.argv) > 1 and sys.argv[1] != None:
     full_file_name = './data/' + filename
     q.put(URL)
     total = 0
-    with open(full_file_name, mode='w+',newline='',encoding='utf-8') as csv_file:
-        fieldnames = ['#', 'name', 'address', 'landlines', 'mobile', 'email', 'website', 'social']
+    with open(
+        full_file_name, mode='w+', newline='', encoding='utf-8'
+            ) as csv_file:
+        fieldnames = [
+            '#',
+            'company_name',
+            'company_address',
+            'company_telephone',
+            'company_email',
+            'company_website',
+            'category',
+            'business_style',
+            'main_market',
+            'contact_name',
+            'contact_job_title',
+            'contact_mobile',
+            'contact_email']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
 
