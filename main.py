@@ -34,11 +34,10 @@ if len(sys.argv) > 1 and sys.argv[1] != None:
             'contact_email']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
-
         while not q.empty():
             processcing_url = q.get()
             if processcing_url not in completed:
-                data = crawler.crawl(processcing_url, q, completed)
+                data = crawler.crawl(processcing_url, q, completed, total)
                 # total = total + len(data)
                 for company in data:
                     total = total + 1

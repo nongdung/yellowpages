@@ -61,7 +61,7 @@ def get_by_label(soup, label, first_tag):
     return value
 
 
-def crawl(URL, q, completed):
+def crawl(URL, q, completed, harvested):
     data = []
     if URL not in completed:
         print('Harvesting %s' % URL)
@@ -79,7 +79,7 @@ def crawl(URL, q, completed):
                 soup = BeautifulSoup(page.content, 'lxml')
                 # links processcing
                 pagination = soup.find('div', id='paging')
-                print(pagination)
+                # print(pagination)
                 if pagination is not None:
                     pagination_links = pagination.find_all('a')
                     if len(pagination_links) > 1:
@@ -96,7 +96,7 @@ def crawl(URL, q, completed):
                     # print(detail_link)
                     # delay random seconds
                     t = random.randint(10, 15)
-                    print('     page detail...delay for %s seconds...' % t)
+                    print('     delay for %s seconds...' % t)
                     time.sleep(t)
 
                     try:
@@ -129,7 +129,6 @@ def crawl(URL, q, completed):
 
                             # name
                             company_name = soup.find('h1').text
-                            print(company_name)
 
                             # address
                             company_address = get_by_label(
@@ -178,7 +177,7 @@ def crawl(URL, q, completed):
                                     company_email = link.text
                                 if 'http' in link.get('href'):
                                     company_website = link.get('href')
-
+                            print(harvested + len(data) + 1, company_name)
                             info = {
                                 "company_name": company_name,
                                 "company_address": company_address,
