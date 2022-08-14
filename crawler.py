@@ -77,13 +77,25 @@ def crawl(URL, q, completed):
             if page.status_code == 200:
                 # data processcing
                 soup = BeautifulSoup(page.content, 'lxml')
+                # links processcing
+                pagination = soup.find('div', id='paging')
+                print(pagination)
+                if pagination is not None:
+                    pagination_links = pagination.find_all('a')
+                    if len(pagination_links) > 1:
+                        N = int(pagination_links[-2].text)
+                        for i in range(2, N + 1):
+                            href = root_url + u.path + "?page={}".format(i)
+                            print(href)
+                            if href not in completed and href != URL:
+                                q.put(href)
                 listing = soup.find_all('div', class_='boxlistings')
                 for company in listing:
                     clink = company.find('h2', class_='company_name').a
                     detail_link = clink.get('href')
                     # print(detail_link)
                     # delay random seconds
-                    t = 5  # random.randint(10, 15)
+                    t = random.randint(10, 15)
                     print('     page detail...delay for %s seconds...' % t)
                     time.sleep(t)
 
@@ -117,7 +129,7 @@ def crawl(URL, q, completed):
 
                             # name
                             company_name = soup.find('h1').text
-                            print("     ", company_name)
+                            print(company_name)
 
                             # address
                             company_address = get_by_label(
@@ -156,7 +168,6 @@ def crawl(URL, q, completed):
                                 contact_container, 'Email:', 'p')
 
                             # company_email
-                            print("TEST")
                             c_email_container = company_container.findChild()
                             email_container = c_email_container \
                                 .find_next_sibling() \
@@ -182,7 +193,7 @@ def crawl(URL, q, completed):
                                 "contact_mobile": contact_mobile.replace(" ", ""),
                                 "contact_email": contact_email.strip("\n").strip()
                             }
-                            print(info)
+                            # print(info)
                             data.append(info)
 
                     except requests.exceptions.RequestException as err:
@@ -201,21 +212,9 @@ def crawl(URL, q, completed):
                         print("Timeout Error:", errt)
                         t = random.randint(60, 150)
                         time.sleep(t)
-
-                # links processcing
-                pagination = soup.find('ul', class_='pagination')
-                if pagination is not None:
-                    pagination_links = pagination.find_all('a')
-                    for link in pagination_links:
-                        href = link.get('href')
-                        if '/category/' in href:
-                            next_link = root_url + href
-                            if 'javascript' not in href and next_link not in completed and next_link != URL:
-                                q.put(next_link)
             else:
                 print("Error occur with code: %s" % soup.status_code, URL)
 
-            completed.append(URL)
         except requests.exceptions.RequestException as err:
             print("OOps: Something Else", err)
             t = random.randint(60, 150)
@@ -232,6 +231,7 @@ def crawl(URL, q, completed):
             print("Timeout Error:", errt)
             t = random.randint(60, 150)
             time.sleep(t)
+        completed.append(URL)
 
     # finally return data
     return data
